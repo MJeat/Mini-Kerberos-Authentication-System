@@ -10,6 +10,9 @@ Specifically, the goal is to:
 
 Below is the flowchart: 
 <br>
-<img width="1274" height="692" alt="Image" src="https://github.com/user-attachments/assets/d0955f52-bc08-42da-b54b-dd4c048768c6" /> <>
+<img width="1274" height="692" alt="Image" src="https://github.com/user-attachments/assets/d0955f52-bc08-42da-b54b-dd4c048768c6" />
 <br>
+
+## Description
+The Mini Kerberos Authentication System securely verifies users without sending passwords over the network. It operates through a Key Distribution Centre (KDC) containing an Authentication Server (AS) and a Ticket Granting Server (TGS). The AS validates the user’s credentials and issues a Ticket Granting Ticket (TGT). The client uses this TGT to request a service token from the TGS, which allows access to the File Server. The File Server verifies the token using shared encryption keys before granting access. A Mini SIEM tool monitors activities, logs access, and detects errors, enhancing security and accountability.
 
