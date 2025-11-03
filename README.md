@@ -7,3 +7,9 @@ Specifically, the goal is to:
 - Ensure that users are authenticated securely before accessing protected resources.
 - Prevent unauthorized access and replay attacks by using time-stamped, encrypted tokens.
 - Provide an educational model to understand how Kerberos enhances trust and security in distributed systems.
+
+Below is the flowchart: 
+<br>
+<img width="1274" height="692" alt="Image" src="https://github.com/user-attachments/assets/d0955f52-bc08-42da-b54b-dd4c048768c6" /> <>
+<br>
+
