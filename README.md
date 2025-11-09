@@ -1,4 +1,4 @@
-# _Tips_: 
+# _Tips to navigate and use the repository_: 
 
 1. First, read all codes from this directory and understand how each function need each other across files
 2. After reading the CleanCode directory, go to WithNotes directory for more detailed version of noting and documentation.
