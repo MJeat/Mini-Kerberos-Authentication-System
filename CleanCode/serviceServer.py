@@ -4,6 +4,7 @@ import json
 from cryptography.fernet import Fernet
 
 service_storage = kdc.services_storage()
+# print(service_storage.items())  # for testing bugs
 def service(username, service_id, encrypted_user_authenticator_msg, encrypted_ST):
     
     # Find service secret key, based on the selected service ID
@@ -79,7 +80,6 @@ def file_server(service_number):
         print(f"[SERVICE] Invalid service ID: {service_number}")
         return None, None
     
-
 
     
     
