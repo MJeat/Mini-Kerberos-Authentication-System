@@ -1,0 +1,32 @@
+[
+    {
+        "timestamp": "2025-11-14 21:42:13",
+        "component": "CLIENT",
+        "username": "admin",
+        "event": "authentication attempt",
+        "status": "failure",
+        "severity": "HIGH",
+        "ip": "192.168.1.20",
+        "details": ""
+    },
+    {
+        "timestamp": "2025-11-14 21:42:13",
+        "component": "TGS",
+        "username": "admin",
+        "event": "TGT validation",
+        "status": "success",
+        "severity": "INFO",
+        "ip": "192.168.1.5",
+        "details": ""
+    },
+    {
+        "timestamp": "2025-11-14 21:42:13",
+        "component": "SERVICE",
+        "username": "admin",
+        "event": "service ticket decrypt",
+        "status": "failure",
+        "severity": "HIGH",
+        "ip": "192.168.1.7",
+        "details": ""
+    }
+]
