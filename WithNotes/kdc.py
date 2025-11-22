@@ -14,12 +14,12 @@ from cryptography.fernet import Fernet
 tgs_key  = Fernet.generate_key()   # Ticket Granting Server secret key
 
 def services_storage():
-    # service ID and its service secret key - Preferrably should be static, not dynamic.
+    # service ID and its service secret key - Preferrably should be static, not dynamic. If use dynamic key generation from Fernet.generate_key(), it will cause errors.
     st_key1 = b'tvvN_CgyYJ-ulmJaMnBTLV2mP2lEnzHUUAnyy3wS444='   # Static Service secret key for service ID 1
     st_key2 = b'dVhoWgGGmhs4Ba9fElaiMXAhHmre0foIZC6ve9pxf6w=' # Static Service secret key for service ID 2  
     st_key3 = b'-XnUYdt9YC8Y9ouuc4k8zSDPw7izkBqbLu8JixBgwW8='  # Static Service secret key for service ID 3
     st_key4 = b'pR491-NUP44U0VDNw_3QpGuXau9gTg2UpbrkZqn8wOM='  # Static Service secret key for service ID 4
-    st_key5 = Fernet.generate_key()   # Dynamic Service secret key for service ID 5
+    st_key5 = b'YBrIYQUorlrwIgyzsMY86aRhqcMii7hK7ZpKgtWJrAo='   # Static Service secret key for service ID 4
 
     service_storage = {
         "1": st_key1,
@@ -37,10 +37,11 @@ def derieved_key(password):
     hash_pwd = hashlib.sha256(password.encode()).digest()
     return base64.urlsafe_b64encode(hash_pwd)  
 
-credential_storage = {"bob":derieved_key("123"),
-               "Alice":derieved_key("helloWorl$"),
-               "Smey": derieved_key("iLxvM0n3y"),
-               "Pich":derieved_key("Blu3T3@m_Ismyf4v")}
+credential_storage = {
+    "bob":derieved_key("123"),
+    "Alice":derieved_key("helloWorl$"),
+    "Smey": derieved_key("iLxvM0n3y"),
+    "Pich":derieved_key("Blu3T3@m_Ismyf4v")}
 
 def authenticationServer(usrname, ip_addr):
     if usrname not in credential_storage:
