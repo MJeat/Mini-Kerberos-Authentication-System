@@ -7,17 +7,20 @@ Client for the Kerberos-style demo (with MFA + SIEM logging).
 """
 
 from __future__ import annotations
-import sys, time
-from typing import Optional, Tuple
+import sys
+import time
+from typing import Optional
+
 from cryptography.fernet import Fernet, InvalidToken
 import kdc
 import serviceServer
-import siem_logger  # Central logging module
+import siem_logger
+
 
 CLIENT_STATIC_IP = "192.168.1.20"
-MANUAL_FLOW = False  # Optional teaching mode
+MANUAL_FLOW = False  # if True, will pause between steps for teaching
 
-# Session storage
+# Session storage (simulating client memory)
 TGS_SESSION_KEY: Optional[bytes] = None
 ST_SESSION_KEY: Optional[bytes] = None
 ENCRYPTED_TGT: Optional[bytes] = None
@@ -36,12 +39,13 @@ def client_as(username: str, password: str) -> bool:
     """Contact AS (with MFA), decrypt message with password, store TGS key + TGT."""
     global TGS_SESSION_KEY, ENCRYPTED_TGT
 
-    print("\n[CLIENT] Starting Authentication Phase...")
+    print("\n[CLIENT] 🔐 Starting Authentication Phase...")
     print("[CLIENT] Sending username and requesting MFA challenge...")
 
-    out = kdc.authentication_server(username, CLIENT_STATIC_IP)
+    # ✅ NOTE: now passing username, password, and IP correctly
+    out = kdc.authentication_server(username, password, CLIENT_STATIC_IP)
     if out is None:
-        print("[CLIENT] Authentication failed (invalid user, password, or MFA).")
+        print("[CLIENT] ❌ Authentication failed (invalid user, password, or MFA).")
         siem_logger.log_event("CLIENT", username, "authentication", "fail", CLIENT_STATIC_IP, "AS authentication failed")
         return False
 
@@ -54,8 +58,8 @@ def client_as(username: str, password: str) -> bool:
     try:
         plain = f_user.decrypt(as_msg_to_user)
     except InvalidToken:
-        print("[CLIENT] Wrong password (decrypt failed).")
-        siem_logger.log_event("CLIENT", username, "password_verification", "fail", CLIENT_STATIC_IP, "Invalid password")
+        print("[CLIENT] ❌ Wrong password (decrypt failed).")
+        siem_logger.log_event("CLIENT", username, "password_verification", "fail", CLIENT_STATIC_IP, "Invalid password (decrypt)")
         return False
 
     tgt_id_b, tgs_key_b = plain.split(b"||", 1)
@@ -73,7 +77,7 @@ def client_as(username: str, password: str) -> bool:
     siem_logger.log_event("CLIENT", username, "authentication", "success", CLIENT_STATIC_IP, "MFA + password passed")
 
     if MANUAL_FLOW:
-        input("(manual) Press Enter after you've pasted TGT to the 'TGS step'...")
+        input("(manual) Press Enter to continue to TGS step...")
     return True
 
 
@@ -92,18 +96,18 @@ def client_tgs(username: str, service_id: str) -> bool:
 
     out = kdc.ticket_granting_server(service_id, username, encrypted_auth, ENCRYPTED_TGT, CLIENT_STATIC_IP)
     if out is None:
-        print("[CLIENT] TGS rejected the request.")
+        print("[CLIENT] ❌ TGS rejected the request.")
         siem_logger.log_event("CLIENT", username, "tgs_request", "fail", CLIENT_STATIC_IP, f"TGS rejected service {service_id}")
         return False
 
     tgs_msg_to_user, service_ticket = out
 
-    # decrypt message to get service session key
+    # decrypt TGS reply to get ST session key
     try:
         plain = f_tgs.decrypt(tgs_msg_to_user)
         sid_b, st_key_b = plain.split(b"||", 1)
     except InvalidToken:
-        print("[CLIENT] Decrypt from TGS failed.")
+        print("[CLIENT] ❌ Decrypt from TGS failed.")
         siem_logger.log_event("CLIENT", username, "tgs_decrypt", "fail", CLIENT_STATIC_IP, "Failed to decrypt TGS response")
         return False
 
@@ -118,10 +122,17 @@ def client_tgs(username: str, service_id: str) -> bool:
     print("  Service Session Key:", st_key_b.decode())
     print()
 
-    siem_logger.log_event("CLIENT", username, "tgs_request", "success", CLIENT_STATIC_IP, f"Service {sid_b.decode()} ticket granted")
+    siem_logger.log_event(
+        "CLIENT",
+        username,
+        "tgs_request",
+        "success",
+        CLIENT_STATIC_IP,
+        f"Service {sid_b.decode()} ticket granted"
+    )
 
     if MANUAL_FLOW:
-        input("(manual) Press Enter after you've pasted ST to the 'Service step'...")
+        input("(manual) Press Enter to continue to Service step...")
     return True
 
 
@@ -138,14 +149,14 @@ def client_service(username: str, service_id: str) -> bool:
 
     server_reply = serviceServer.service_handle(username, service_id, encrypted_auth, ENCRYPTED_ST)
     if server_reply is None:
-        print("[CLIENT] Service rejected the request.")
+        print("[CLIENT] ❌ Service rejected the request.")
         siem_logger.log_event("CLIENT", username, "service_request", "fail", CLIENT_STATIC_IP, f"Service {service_id} rejected")
         return False
 
     try:
         echoed_sid = f_st.decrypt(server_reply).decode()
     except InvalidToken:
-        print("[CLIENT] Could not decrypt server authenticator.")
+        print("[CLIENT] ❌ Could not decrypt server authenticator.")
         siem_logger.log_event("CLIENT", username, "service_response", "fail", CLIENT_STATIC_IP, "Server authenticator decrypt failed")
         return False
 
@@ -180,7 +191,7 @@ def main() -> None:
     password = prompt_nonempty("Password: ")
 
     if not client_as(username, password):
-        sys.exit(0)
+        sys.exit(1)
 
     while True:
         print("\nChoose a service:")
@@ -206,7 +217,7 @@ def main() -> None:
             continue
 
         client_service(username, choice)
-        # loop allows reuse of TGT
+        # loop continues, TGT can be reused
 
 
 if __name__ == "__main__":

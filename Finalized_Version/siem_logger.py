@@ -1,8 +1,7 @@
 """
-FULL MERGED SIEM SYSTEM
-- SIEM Logger (backend)
-- Tkinter Dashboard (frontend)
-- Clean & simple
+SIEM Logger + Tkinter Dashboard
+- log_event(): central logging function for AS, TGS, SERVICE, CLIENT
+- SIEMDashboard: simple GUI to view logs with severity filter
 """
 
 import json
@@ -16,10 +15,10 @@ MAX_LOG_SIZE = 1000  # rotate after 1000 logs
 
 
 # ==========================================================
-#                   SEVERITY CLASSIFICATION
+#                   🔒 SEVERITY CLASSIFICATION
 # ==========================================================
 def classify_severity(event: str, status: str) -> str:
-    """Rule-based severity."""
+    """Simple rule-based severity classification."""
     event_l = event.lower()
 
     if status == "success":
@@ -38,7 +37,7 @@ def classify_severity(event: str, status: str) -> str:
 
 
 # ==========================================================
-#                   SAFE JSON LOADING
+#                   🔐 SAFE JSON LOADING
 # ==========================================================
 def safe_load():
     """Load JSON safely even if corrupted."""
@@ -48,14 +47,14 @@ def safe_load():
     try:
         with open(LOG_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         corrupted = f"corrupted_" + str(int(time.time())) + ".json"
         os.rename(LOG_FILE, corrupted)
         return []
 
 
 # ==========================================================
-#                   LOGGING FUNCTION
+#                   📝 LOGGING FUNCTION
 # ==========================================================
 def log_event(component: str, username: str, event: str, status: str,
               ip: str = "-", details: str = ""):
@@ -88,7 +87,7 @@ def log_event(component: str, username: str, event: str, status: str,
 
 
 # ==========================================================
-#                   SIEM DASHBOARD (Tkinter)
+#                   📊 SIEM DASHBOARD (Tkinter)
 # ==========================================================
 def load_logs():
     if not os.path.exists(LOG_FILE):
@@ -96,7 +95,7 @@ def load_logs():
     try:
         with open(LOG_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return []
 
 
@@ -112,17 +111,24 @@ class SIEMDashboard(tk.Tk):
 
     # ------------------------------------------------------
     def create_widgets(self):
-        header = tk.Label(self, text="SIEM Log Dashboard",
-                          font=("Arial", 20, "bold"),
-                          bg="#f5f5f5")
+        header = tk.Label(
+            self,
+            text="SIEM Log Dashboard",
+            font=("Arial", 20, "bold"),
+            bg="#f5f5f5"
+        )
         header.pack(pady=10)
 
-        # Filter
+        # Filter frame
         frame = tk.Frame(self, bg="#f5f5f5")
         frame.pack()
 
-        tk.Label(frame, text="Filter by Severity:",
-                 font=("Arial", 12), bg="#f5f5f5").pack(side="left")
+        tk.Label(
+            frame,
+            text="Filter by Severity:",
+            font=("Arial", 12),
+            bg="#f5f5f5"
+        ).pack(side="left")
 
         self.severity_var = tk.StringVar(value="ALL")
 
@@ -135,11 +141,15 @@ class SIEMDashboard(tk.Tk):
         menu.pack(side="left", padx=5)
         menu.bind("<<ComboboxSelected>>", lambda e: self.refresh_table())
 
-        # Table setup
-        columns = ("timestamp", "component", "username", "event",
-                   "status", "severity", "ip", "details")
+        # Table
+        columns = (
+            "timestamp", "component", "username", "event",
+            "status", "severity", "ip", "details"
+        )
 
-        self.table = ttk.Treeview(self, columns=columns, show="headings", height=20)
+        self.table = ttk.Treeview(
+            self, columns=columns, show="headings", height=20
+        )
 
         for col in columns:
             self.table.heading(col, text=col.capitalize())
@@ -190,7 +200,7 @@ class SIEMDashboard(tk.Tk):
 #                   ▶ RUN DASHBOARD DIRECTLY
 # ==========================================================
 if __name__ == "__main__":
-    # Example test logs (remove if using real Kerberos system)
+    # Example test logs (optional – delete later)
     log_event("CLIENT", "admin", "authentication attempt", "failure", "192.168.1.20")
     log_event("TGS", "admin", "TGT validation", "success", "192.168.1.5")
     log_event("SERVICE", "admin", "service ticket decrypt", "failure", "192.168.1.7")
