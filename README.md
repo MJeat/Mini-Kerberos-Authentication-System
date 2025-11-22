@@ -1,13 +1,14 @@
 # _Tips to navigate and use the repository_: 
 This is a recommendation:
-1. First, read all codes from CleanCode directory and understand how each function need each other across files
-2. After reading the CleanCode directory, go to WithNotes directory for more detailed version of noting and documentation.
+1. First, read all code from the CleanCode directory and understand how each function needs each others across files
+2. After reading the CleanCode directory, go to the WithNotes directory for a more detailed version of noting and documentation.
 You may find this directory a little bit difficult to read and navigate, but if you already understand the code and functionality from the CleanCode directory, then the WithNotes directory shouldn't be a problem.
+3. Finalized_Version is the final product. 
 
 =============================================
 # Mini-Kerberos-Authentication-System
 
-The main objective of the Mini Kerberos Authentication System is to design and demonstrate a secure authentication mechanism that verifies user identities and grants access to network services without exposing passwords. The system aims to implement the core principles of the Kerberos protocol such as confidentiality, integrity, and mutual authentication through the use of encrypted tickets and session keys.
+The main objective of the Mini Kerberos Authentication System is to design and demonstrate a secure authentication mechanism that verifies user identities and grants access to network services without exposing passwords. The system aims to implement the core principles of the Kerberos protocol, such as confidentiality, integrity, and mutual authentication through the use of encrypted tickets and session keys.
 
 Specifically, the goal is to:
 - Simulate the interaction between the Authentication Server (AS), Ticket Granting Server (TGS), and File Server within a Key Distribution Centre (KDC).
