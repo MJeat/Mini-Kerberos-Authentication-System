@@ -70,25 +70,25 @@ def authentication_server(
     or None on failure.
     """
 
-    # 1️⃣ Username check
+    # 1️. Username check
     if username not in CREDENTIALS:
-        print("[AS] ❌ Unknown user.")
+        print("[AS] Unknown user.")
         siem_logger.log_event("AS", username, "authentication", "fail", client_ip, "Unknown username")
         return None
 
-    # 2️⃣ Password verification (string must match exactly)
+    # 2. Password verification (string must match exactly)
     entered_key = derived_key(password)
     stored_key = CREDENTIALS[username]
 
     if entered_key != stored_key:
-        print("[AS] ❌ Invalid password.")
+        print("[AS] Invalid password.")
         siem_logger.log_event("AS", username, "authentication", "fail", client_ip, "Wrong password")
         return None
 
-    print("[AS] ✅ Password verified.")
+    print("[AS] Password verified.")
     siem_logger.log_event("AS", username, "authentication", "success", client_ip, "Password verified")
 
-    # 3️⃣ MFA Verification
+    # 3️. MFA Verification
     mfa_code = str(random.randint(100000, 999999))
     print(f"[AS] Sending MFA code to {username}'s trusted device...")
     time.sleep(1)
@@ -100,10 +100,10 @@ def authentication_server(
         siem_logger.log_event("AS", username, "mfa_verification", "fail", client_ip, "Incorrect MFA")
         return None
 
-    print("[AS] ✅ MFA verification successful.")
+    print("[AS] MFA verification successful.")
     siem_logger.log_event("AS", username, "mfa_verification", "success", client_ip)
 
-    # 4️⃣ Issue TGT + TGS Session Key
+    # 4️. Issue TGT + TGS Session Key
     user_key = entered_key
     f_user = Fernet(user_key)
 
@@ -160,19 +160,19 @@ def ticket_granting_server(
     or None on failure.
     """
 
-    # 1️⃣ Service validation
+    # 1️. Service validation
     if service_id not in SERVICE_KEYS:
-        print("[TGS] ❌ Invalid service_id.")
+        print("[TGS] Invalid service_id.")
         siem_logger.log_event("TGS", username, "service_request", "fail", client_ip, "Invalid service ID")
         return None
 
-    # 2️⃣ Decrypt TGT
+    # 2️. Decrypt TGT
     try:
         f_tgs = Fernet(TGS_KEY)
         tgt_plain = f_tgs.decrypt(encrypted_tgt)
         tgt = json.loads(tgt_plain.decode())
     except Exception as e:
-        print("[TGS] ❌ TGT decrypt error:", e)
+        print("[TGS] TGT decrypt error:", e)
         siem_logger.log_event("TGS", username, "tgt_decrypt", "fail", client_ip, str(e))
         return None
 
@@ -180,34 +180,34 @@ def ticket_granting_server(
     tgt_user = tgt.get("client_name")
     tgt_ip = tgt.get("client_ip")
 
-    # 3️⃣ Decrypt client authenticator
+    # 3️. Decrypt client authenticator
     try:
         f_sess = Fernet(tgs_session_key_b)
         auth_plain = f_sess.decrypt(encrypted_user_authenticator).decode()
         auth_user, auth_ts_s = auth_plain.split("||", 1)
         auth_ts = int(auth_ts_s)
     except Exception as e:
-        print("[TGS] ❌ Authenticator decrypt error:", e)
+        print("[TGS] Authenticator decrypt error:", e)
         siem_logger.log_event("TGS", username, "authenticator", "fail", client_ip, str(e))
         return None
 
-    # 4️⃣ Checks: freshness, username, IP
+    # 4️. Checks: freshness, username, IP
     if not _fresh(auth_ts):
-        print("[TGS] ❌ Replay detected (stale authenticator).")
+        print("[TGS] Replay detected (stale authenticator).")
         siem_logger.log_event("TGS", username, "authenticator", "fail", client_ip, "Replay detected")
         return None
 
     if auth_user != username or tgt_user != username:
-        print("[TGS] ❌ Username mismatch.")
+        print("[TGS] Username mismatch.")
         siem_logger.log_event("TGS", username, "authenticator", "fail", client_ip, "Username mismatch")
         return None
 
     if tgt_ip != client_ip:
-        print("[TGS] ❌ Client IP mismatch.")
+        print("[TGS] Client IP mismatch.")
         siem_logger.log_event("TGS", username, "authenticator", "fail", client_ip, "IP mismatch")
         return None
 
-    # 5️⃣ Issue Service Ticket
+    # 5️. Issue Service Ticket
     st_session_key = Fernet.generate_key()
     to_user = f_sess.encrypt(service_id.encode() + b"||" + st_session_key)
 
@@ -222,7 +222,7 @@ def ticket_granting_server(
     f_service = Fernet(SERVICE_KEYS[service_id])
     service_ticket = f_service.encrypt(json.dumps(st_payload).encode())
 
-    print(f"[TGS] ✅ Issued ST for {username} to access service {service_id}.")
+    print(f"[TGS] Issued ST for {username} to access service {service_id}.")
     siem_logger.log_event("TGS", username, "ticket_granted", "success", client_ip, f"Service {service_id}")
 
     return to_user, service_ticket

@@ -39,13 +39,13 @@ def client_as(username: str, password: str) -> bool:
     """Contact AS (with MFA), decrypt message with password, store TGS key + TGT."""
     global TGS_SESSION_KEY, ENCRYPTED_TGT
 
-    print("\n[CLIENT] 🔐 Starting Authentication Phase...")
+    print("\n[CLIENT] Starting Authentication Phase...")
     print("[CLIENT] Sending username and requesting MFA challenge...")
 
-    # ✅ NOTE: now passing username, password, and IP correctly
+    # Note: now passing username, password, and IP correctly
     out = kdc.authentication_server(username, password, CLIENT_STATIC_IP)
     if out is None:
-        print("[CLIENT] ❌ Authentication failed (invalid user, password, or MFA).")
+        print("[CLIENT] Authentication failed (invalid user, password, or MFA).")
         siem_logger.log_event("CLIENT", username, "authentication", "fail", CLIENT_STATIC_IP, "AS authentication failed")
         return False
 
@@ -58,7 +58,7 @@ def client_as(username: str, password: str) -> bool:
     try:
         plain = f_user.decrypt(as_msg_to_user)
     except InvalidToken:
-        print("[CLIENT] ❌ Wrong password (decrypt failed).")
+        print("[CLIENT] Wrong password (decrypt failed).")
         siem_logger.log_event("CLIENT", username, "password_verification", "fail", CLIENT_STATIC_IP, "Invalid password (decrypt)")
         return False
 
@@ -96,7 +96,7 @@ def client_tgs(username: str, service_id: str) -> bool:
 
     out = kdc.ticket_granting_server(service_id, username, encrypted_auth, ENCRYPTED_TGT, CLIENT_STATIC_IP)
     if out is None:
-        print("[CLIENT] ❌ TGS rejected the request.")
+        print("[CLIENT] TGS rejected the request.")
         siem_logger.log_event("CLIENT", username, "tgs_request", "fail", CLIENT_STATIC_IP, f"TGS rejected service {service_id}")
         return False
 
@@ -107,7 +107,7 @@ def client_tgs(username: str, service_id: str) -> bool:
         plain = f_tgs.decrypt(tgs_msg_to_user)
         sid_b, st_key_b = plain.split(b"||", 1)
     except InvalidToken:
-        print("[CLIENT] ❌ Decrypt from TGS failed.")
+        print("[CLIENT] Decrypt from TGS failed.")
         siem_logger.log_event("CLIENT", username, "tgs_decrypt", "fail", CLIENT_STATIC_IP, "Failed to decrypt TGS response")
         return False
 
@@ -149,14 +149,14 @@ def client_service(username: str, service_id: str) -> bool:
 
     server_reply = serviceServer.service_handle(username, service_id, encrypted_auth, ENCRYPTED_ST)
     if server_reply is None:
-        print("[CLIENT] ❌ Service rejected the request.")
+        print("[CLIENT] Service rejected the request.")
         siem_logger.log_event("CLIENT", username, "service_request", "fail", CLIENT_STATIC_IP, f"Service {service_id} rejected")
         return False
 
     try:
         echoed_sid = f_st.decrypt(server_reply).decode()
     except InvalidToken:
-        print("[CLIENT] ❌ Could not decrypt server authenticator.")
+        print("[CLIENT] Could not decrypt server authenticator.")
         siem_logger.log_event("CLIENT", username, "service_response", "fail", CLIENT_STATIC_IP, "Server authenticator decrypt failed")
         return False
 
